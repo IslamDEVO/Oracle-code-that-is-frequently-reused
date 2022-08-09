@@ -1,5 +1,4 @@
-create or replace FUNCTION      XX_GET_EMP_DIRECTOR (
-   V_TRANSACTIONS_ID    NUMBER)
+create or replace FUNCTION      ZAIN_GET_EMP_DIRECTOR (P_PERSON_ID NUMBER)
    RETURN VARCHAR2
 AS
    v_Sup_Parent_Position_Id   NUMBER;
@@ -16,35 +15,11 @@ AS
    ORG_EXIST                  VARCHAR2 (10);
 /* ASHRAF ABU SAAD */
 BEGIN
-   BEGIN
-      SELECT RTRIM (LTRIM (hr_ameutil_ss.isLOAChange (V_TRANSACTIONS_ID)))
-        INTO v_process_name
-        FROM DUAL;
-
-      --  updated Abdullah.albedah    30Mar2015  Added condition to return true for over time process
-
-      v_process_name :=
-         CASE
-            WHEN APPS.XX_ZAIN_AME_PKG.XX_EIT_STRUCTURE_CODE (
-                    V_TRANSACTIONS_ID) = 'SA_OVERTIME_REQUEST'
-            THEN
-               'true'
-         END;
-   EXCEPTION
-      WHEN OTHERS
-      THEN
-         v_process_name := 'N';
-   END;
-
-
-
-   v_TRANS_ID := V_TRANSACTIONS_ID;
-
-   SELECT DISTINCT PAF.POSITION_ID, HAT.CREATOR_PERSON_ID
-     INTO v_Sup_Parent_Position_Id, EMP_PERSON_ID
-     FROM HR_API_TRANSACTIONS HAT, PER_ALL_ASSIGNMENTS_F PAF
-    WHERE     HAT.TRANSACTION_ID = v_TRANS_ID
-          AND HAT.selected_PERSON_ID = PAF.PERSON_ID
+   SELECT DISTINCT PAF.POSITION_ID
+     INTO v_Sup_Parent_Position_Id
+     FROM PER_ALL_ASSIGNMENTS_F PAF
+    WHERE     1 = 1
+          AND PAF.PERSON_ID = P_PERSON_ID
           AND SYSDATE BETWEEN PAF.EFFECTIVE_START_DATE
                           AND PAF.EFFECTIVE_END_DATE
           AND PAF.PRIMARY_FLAG = 'Y';
