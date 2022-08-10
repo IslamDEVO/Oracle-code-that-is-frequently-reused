@@ -5380,7 +5380,7 @@ AS
         --------------
         l_address_id                NUMBER DEFAULT NULL;
         l_address_start_date        DATE;
-        l_address_OVN               NUMBER DEFAULT NULL;
+        l_address_OVN               NUMBER DEFAULT 0;
         --
         l_country                   VARCHAR2(50);
         l_address_type              VARCHAR2(200);
@@ -5543,6 +5543,35 @@ AS
                                                p_address_id => l_address_id,
                                                p_object_version_number => l_address_OVN);
                         END IF;
+                    ELSE
+                        /*update contact person address with a main user addres*/
+                        IF p_address_id != 0 THEN
+                            SELECT town_or_city, postal_code, region_1, region_2, region_3, add_information13, add_information14, address_type, country
+                            INTO l_town_or_city, l_postal_code, l_region_1, l_region_2, l_region_3, l_add_information13, l_add_information14, l_address_type, l_country
+                            FROM per_addresses WHERE primary_flag = 'Y' AND person_id = P_PERSON_ID;
+                            
+                            SELECT object_version_number
+                            INTO l_address_OVN
+                            FROM per_addresses
+                            WHERE address_id = p_address_id;
+                            
+                            hr_person_address_api.update_person_address(p_validate => L_VALIDATE, 
+                                               p_effective_date => SYSDATE,
+--                                               p_primary_flag => p_primary_flag,
+                                               p_date_from => SYSDATE,
+                                               p_date_to => NULL,
+                                               p_address_type => l_address_type,
+                                               p_town_or_city => l_town_or_city,
+                                               p_region_1 => l_region_1,
+                                               p_region_2 => l_region_2,
+                                               p_region_3 => l_region_3,
+                                               p_postal_code => l_postal_code,
+                                               p_country => l_country,
+                                               p_add_information13 => l_add_information13,
+                                               p_add_information14 => l_add_information14,
+                                               p_address_id => p_address_id,
+                                               p_object_version_number => l_address_OVN);
+                        END IF;
                     END IF;
             END IF;
             
@@ -5553,8 +5582,8 @@ AS
             APEX_JSON.write('STATUS', l_resp_status);
             APEX_JSON.write('PERSON_OBJECT_VESION_NUMBER', l_OVN);
             APEX_JSON.write('CONTACT_OBJECT_VESION_NUMBER', l_contact_rel_ovn);
-            APEX_JSON.write('ADDRESS_ID', 1);
-            APEX_JSON.write('ADDRESS_OBJECT_VESION_NUMBER', 2);
+            APEX_JSON.write('ADDRESS_ID', p_address_id);
+            APEX_JSON.write('ADDRESS_OBJECT_VESION_NUMBER', l_address_OVN);
             APEX_JSON.open_array('MESSAGES');
             APEX_JSON.close_array;
             ---------------------
