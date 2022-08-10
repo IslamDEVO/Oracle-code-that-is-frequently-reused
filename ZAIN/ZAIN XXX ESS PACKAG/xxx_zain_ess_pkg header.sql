@@ -163,7 +163,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         -------
         P_EFFECTIVE_DATE date default SYSDATE
     ) return clob;
-    
+
     FUNCTION UPDATE_QUALIFICATION (
         p_validate      VARCHAR2 DEFAULT 'TRUE',
         P_PERSON_ID NUMBER default null,
@@ -177,13 +177,13 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         -------
         P_EFFECTIVE_DATE date default SYSDATE
     ) return clob;
-    
+
     FUNCTION DELETE_QUALIFICATION (
         p_validate      VARCHAR2 DEFAULT 'TRUE',
         P_PERSON_ID NUMBER default null,
         P_QUALIFICATION_ID NUMBER default null
     ) return clob;
-    
+
     FUNCTION CREATE_ATTENDED_ESTAB (
         p_validate      VARCHAR2 DEFAULT 'TRUE',
         P_PERSON_ID NUMBER default null,
@@ -197,7 +197,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         -------
         P_EFFECTIVE_DATE date default SYSDATE
     ) return clob;
-    
+
     FUNCTION UPDATE_ATTENDED_ESTAB (
         p_validate      VARCHAR2 DEFAULT 'TRUE',
         P_PERSON_ID NUMBER default null,
@@ -212,14 +212,14 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         -------
         P_EFFECTIVE_DATE date default SYSDATE
     ) return clob;
-    
+
     FUNCTION DELETE_ATTENDED_ESTAB (
         p_validate      VARCHAR2 DEFAULT 'TRUE',
         P_PERSON_ID NUMBER default null,
         -------
         p_attendance_id                 NUMBER DEFAULT null
     ) return clob;
-    
+
     FUNCTION create_objective (
         p_validate                   IN VARCHAR2 default 'TRUE',
         p_person_id                  NUMBER DEFAULT NULL,
@@ -355,7 +355,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         -------
                 p_effective_date               DATE DEFAULT sysdate
     ) RETURN CLOB;
-    
+
     FUNCTION update_appraisal (
         p_validate      VARCHAR2 DEFAULT 'TRUE',
         p_person_id                    NUMBER DEFAULT NULL,
@@ -374,7 +374,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         -------
         p_effective_date               DATE DEFAULT sysdate
     ) RETURN CLOB;
-    
+
     FUNCTION insert_performance_rating (
         p_person_id     NUMBER DEFAULT NULL,
         p_validate      VARCHAR2 DEFAULT NULL,
@@ -383,7 +383,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         p_performance_level_id NUMBER DEFAULT NULL,
         p_effective_date DATE DEFAULT SYSDATE
     ) return clob;
-    
+
     FUNCTION update_performance_rating (
         p_person_id     NUMBER DEFAULT NULL,
         p_validate      VARCHAR2 DEFAULT NULL,
@@ -398,6 +398,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         -------
         p_comments VARCHAR2 DEFAULT NULL,
         p_resignation_reason VARCHAR2 DEFAULT NULL,
+        p_leaving_reason     VARCHAR2 DEFAULT NULL,
         p_sim_card VARCHAR2 DEFAULT NULL,
         p_last_working_date  date default null,
         p_resignation_date date default null,
@@ -424,7 +425,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         p_first_name            VARCHAR2 DEFAULT NULL,
         p_personal_flag         VARCHAR2 DEFAULT 'N'
     ) RETURN CLOB;
-    
+
     FUNCTION update_contact_relationship(
         p_person_id                 NUMBER DEFAULT NULL,
         p_validate                  VARCHAR2 DEFAULT 'TRUE',
@@ -443,7 +444,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         p_delete_other                      IN VARCHAR2 DEFAULT 'N',  
         p_object_version_number             IN NUMBER DEFAULT 1
     )RETURN CLOB;
-    
+
 FUNCTION create_phone (
     p_person_id              NUMBER DEFAULT NULL,
     p_validate               IN  VARCHAR2 DEFAULT 'TRUE',
@@ -514,7 +515,7 @@ FUNCTION delete_person_address (
     p_person_id                NUMBER DEFAULT NULL,
     p_validate                 IN  VARCHAR2 DEFAULT 'TRUE',
     p_address_id               IN  NUMBER
-    
+
 ) RETURN CLOB;
 
 FUNCTION update_person_address (
@@ -596,7 +597,7 @@ FUNCTION create_sa_contact_person (
     P_PERSONAL_FLAG                 IN VARCHAR2 DEFAULT 'N',
     p_use_primary_address           IN VARCHAR2 DEFAULT 'Y',
     p_effective_date                IN  DATE DEFAULT SYSDATE,
-    p_primary_flag                  IN  VARCHAR2 DEFAULT 'Y',
+    p_primary_flag                  IN  VARCHAR2 DEFAULT 'N',
     p_address_type                  IN  VARCHAR2 DEFAULT NULL,
     p_town_or_city                  IN  VARCHAR2 DEFAULT NULL,
     p_region_1                      IN  VARCHAR2 DEFAULT NULL,
@@ -660,7 +661,7 @@ FUNCTION update_sa_contact_person (
     p_use_primary_address           IN VARCHAR2 DEFAULT 'Y',
     p_address_id                    IN  NUMBER,
     p_effective_date                IN  DATE DEFAULT SYSDATE,
-    p_primary_flag                  IN  VARCHAR2 DEFAULT 'Y',
+    p_primary_flag                  IN  VARCHAR2 DEFAULT 'N',
     p_address_type                  IN  VARCHAR2 DEFAULT NULL,
     p_town_or_city                  IN  VARCHAR2 DEFAULT NULL,
     p_region_1                      IN  VARCHAR2 DEFAULT NULL,

@@ -5055,7 +5055,7 @@ AS
         P_PERSONAL_FLAG                 IN VARCHAR2 DEFAULT 'N',
         p_use_primary_address           IN VARCHAR2 DEFAULT 'Y',
         p_effective_date                IN  DATE DEFAULT SYSDATE,
-        p_primary_flag                  IN  VARCHAR2 DEFAULT 'Y',
+        p_primary_flag                  IN  VARCHAR2 DEFAULT 'N',
         p_address_type                  IN  VARCHAR2 DEFAULT NULL,
         p_town_or_city                  IN  VARCHAR2 DEFAULT NULL,
         p_region_1                      IN  VARCHAR2 DEFAULT NULL,
@@ -5340,7 +5340,7 @@ AS
         p_use_primary_address           IN VARCHAR2 DEFAULT 'Y',
         p_address_id                    IN  NUMBER,
         p_effective_date                IN  DATE DEFAULT SYSDATE,
-        p_primary_flag                  IN  VARCHAR2 DEFAULT 'Y',
+        p_primary_flag                  IN  VARCHAR2 DEFAULT 'N',
         p_address_type                  IN  VARCHAR2 DEFAULT NULL,
         p_town_or_city                  IN  VARCHAR2 DEFAULT NULL,
         p_region_1                      IN  VARCHAR2 DEFAULT NULL,
@@ -5378,9 +5378,9 @@ AS
         l_contact_person_id         NUMBER;
         l_contact_person_ovn        NUMBER;
         --------------
-        l_address_id                NUMBER;
+        l_address_id                NUMBER DEFAULT NULL;
         l_address_start_date        DATE;
-        l_address_OVN               NUMBER;
+        l_address_OVN               NUMBER DEFAULT NULL;
         --
         l_country                   VARCHAR2(50);
         l_address_type              VARCHAR2(200);
@@ -5486,9 +5486,10 @@ AS
                 END IF;
                
             END IF;
-            /* create address */
+            /* update address if exist*/
             IF l_contact_rel_ovn IS NOT NULL THEN
                     IF p_use_primary_address = 'N' THEN
+                        IF p_address_id != 0 THEN
                                 SELECT date_from, object_version_number
                                 INTO   l_address_start_date, l_address_OVN
                                 FROM per_addresses
@@ -5496,7 +5497,7 @@ AS
                     
                                 hr_person_address_api.update_person_address(p_validate => L_VALIDATE, 
                                                p_effective_date => SYSDATE,
-                                               p_primary_flag => 'Y',
+--                                               p_primary_flag => p_primary_flag,
                                                p_date_from => l_address_start_date,
                                                p_date_to => NULL,
                                                p_address_type => p_address_type,
@@ -5510,6 +5511,38 @@ AS
                                                p_add_information14 => p_add_information14,
                                                p_address_id => p_address_id,
                                                p_object_version_number => l_address_OVN);
+                                    
+                        ELSE
+                                hr_person_address_api.create_person_address(p_validate => L_VALIDATE, 
+                                               p_effective_date => SYSDATE, 
+--                                               p_pradd_ovlapval_override => p_pradd_ovlapval_override,
+--                                               p_validate_county => p_validate_county,
+                                               p_person_id => p_contact_person_id,
+                                               p_primary_flag => 'Y',
+                                               p_style => 'SA',
+                                               p_date_from => SYSDATE,
+                                               p_date_to => NULL,
+                                               p_address_type => p_address_type,
+--                                               p_comments => p_comments,
+--                                               p_address_line1 => p_address_line1,
+--                                               p_address_line2 => p_address_line2,
+--                                               p_address_line3 => p_address_line3,
+                                               p_town_or_city => p_town_or_city,
+                                               p_region_1 => p_region_1,
+                                               p_region_2 => p_region_2,
+                                               p_region_3 => p_region_3,
+                                               p_postal_code => p_postal_code,
+                                               p_country => p_country,
+--                                               p_telephone_number_1 => p_telephone_number_1,
+--                                               p_telephone_number_2 => p_telephone_number_2,
+--                                               p_telephone_number_3 => p_telephone_number_3,
+--                                               p_addr_attribute_category => p_addr_attribute_category,
+                                               p_add_information13 => p_add_information13,
+                                               p_add_information14 => p_add_information14,
+--                                               p_party_id => p_party_id,
+                                               p_address_id => l_address_id,
+                                               p_object_version_number => l_address_OVN);
+                        END IF;
                     END IF;
             END IF;
             
@@ -5520,7 +5553,8 @@ AS
             APEX_JSON.write('STATUS', l_resp_status);
             APEX_JSON.write('PERSON_OBJECT_VESION_NUMBER', l_OVN);
             APEX_JSON.write('CONTACT_OBJECT_VESION_NUMBER', l_contact_rel_ovn);
-            APEX_JSON.write('ADDRESS_OBJECT_VESION_NUMBER', l_address_OVN);
+            APEX_JSON.write('ADDRESS_ID', 1);
+            APEX_JSON.write('ADDRESS_OBJECT_VESION_NUMBER', 2);
             APEX_JSON.open_array('MESSAGES');
             APEX_JSON.close_array;
             ---------------------
