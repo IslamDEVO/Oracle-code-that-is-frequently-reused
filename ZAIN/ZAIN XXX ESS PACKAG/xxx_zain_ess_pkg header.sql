@@ -160,6 +160,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         p_attendance_id                 NUMBER DEFAULT null,
         p_start_date                    VARCHAR2 DEFAULT null,
         p_end_date                      VARCHAR2 DEFAULT null,
+        p_comments                      VARCHAR2 DEFAULT null,
         -------
         P_EFFECTIVE_DATE date default SYSDATE
     ) return clob;
@@ -174,6 +175,7 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         p_attendance_id                 NUMBER DEFAULT null,
         p_start_date                    VARCHAR2 DEFAULT null,
         p_end_date                      VARCHAR2 DEFAULT null,
+        p_comments                      VARCHAR2 DEFAULT null,
         -------
         P_EFFECTIVE_DATE date default SYSDATE
     ) return clob;
@@ -365,11 +367,15 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         p_appraiser_person_id          NUMBER DEFAULT NULL,
         p_appraisal_period_start_date  DATE DEFAULT NULL,
         p_appraisal_period_end_date    DATE DEFAULT NULL,
+        p_appraisal_date               DATE DEFAULT NULL,
+        p_next_appraisal_date          DATE DEFAULT NULL,
         p_update_appraisal             VARCHAR2 DEFAULT NULL,
         p_appraisal_system_status      VARCHAR2 DEFAULT NULL,
         p_p_system_type                VARCHAR2 DEFAULT NULL,
         p_system_params                VARCHAR2 DEFAULT NULL,
         p_status                       VARCHAR2 DEFAULT NULL,
+        p_behavioural_competencies     VARCHAR2 DEFAULT NULL,
+        p_technical_competencies       VARCHAR2 DEFAULT NULL,
         p_comments                     VARCHAR2 DEFAULT NULL,
         -------
         p_effective_date               DATE DEFAULT sysdate
@@ -389,6 +395,14 @@ create or replace PACKAGE xxx_zain_ess_pkg AS
         p_validate      VARCHAR2 DEFAULT NULL,
         p_performance_rating_id  NUMBER DEFAULT NULL,
         p_performance_level_id NUMBER DEFAULT NULL,
+        p_effective_date DATE DEFAULT SYSDATE
+    ) return clob;
+    
+    FUNCTION update_competence (
+        p_person_id     NUMBER DEFAULT NULL,
+        p_validate      VARCHAR2 DEFAULT NULL,
+        p_competence_element_id  NUMBER DEFAULT NULL,
+        p_rating_level_id NUMBER DEFAULT NULL,
         p_effective_date DATE DEFAULT SYSDATE
     ) return clob;
 

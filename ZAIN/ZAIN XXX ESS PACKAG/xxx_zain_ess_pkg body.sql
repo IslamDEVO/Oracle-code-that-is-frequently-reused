@@ -2483,6 +2483,7 @@ AS
         p_attendance_id                 NUMBER DEFAULT null,
         p_start_date                    VARCHAR2 DEFAULT null,
         p_end_date                      VARCHAR2 DEFAULT null,
+        p_comments                      VARCHAR2 DEFAULT null,
         -------
         P_EFFECTIVE_DATE date default SYSDATE
     ) return clob
@@ -2514,6 +2515,7 @@ AS
                   p_start_date              => p_start_date,
                   p_end_date                => p_end_date,
                   p_qualification_id        => l_qualification_id,
+                  p_comments                => p_comments,
                   p_object_version_number   => l_object_version_number);
             ---
             commit;
@@ -2572,6 +2574,7 @@ AS
         p_attendance_id                 NUMBER DEFAULT null,
         p_start_date                    VARCHAR2 DEFAULT null,
         p_end_date                      VARCHAR2 DEFAULT null,
+        p_comments                      VARCHAR2 DEFAULT null,
         -------
         P_EFFECTIVE_DATE date default SYSDATE
     ) return clob
@@ -2612,8 +2615,9 @@ AS
                   p_attendance_id           => p_attendance_id,
                   p_start_date              => p_start_date,
                   p_end_date                => p_end_date,
-                  p_qualification_id        => P_QUALIFICATION_ID
-                  ,p_object_version_number   => l_object_version_number
+                  p_qualification_id        => P_QUALIFICATION_ID,
+                  p_comments                => p_comments,
+                  p_object_version_number   => l_object_version_number
                   );
             ---
             commit;
@@ -3506,6 +3510,14 @@ AS
        l_assessment_type_id            NUMBER :=4002;
        l_assessment_comp_id            NUMBER;
         --------------
+        cursor cur_assessment_type is
+            select nvl(assessment_type_id, (select assessment_type_id from per_appraisal_templates
+                                            where name = 'Zain Appraisal 2021 Template'))
+            from per_appraisal_templates
+            where APPRAISAL_TEMPLATE_ID = P_template_id;
+        ---
+        rec_assessment_type number;
+        --------------
         v_error_msg               VARCHAR2 (3000);
         l_resp_status varchar2(20);
         -----
@@ -3517,6 +3529,10 @@ AS
         APEX_JSON.open_object;
         ---
         IF P_VALIDATE = 'TRUE' THEN L_VALIDATE := TRUE; ELSE L_VALIDATE := FALSE; END IF;
+        ---
+        open cur_assessment_type;
+        fetch cur_assessment_type into rec_assessment_type;
+        close cur_assessment_type;
         ---
         hr_appraisals_api.create_appraisal (
             p_validate                       => l_validate,
@@ -3548,7 +3564,7 @@ AS
             THEN
                 hr_assessments_api.create_assessment (
                     p_assessment_id                  => l_assessment_comp_id,
-                    p_assessment_type_id             => p_assessment_type_id,
+                    p_assessment_type_id             => rec_assessment_type, -- p_assessment_type_id,
                     p_business_group_id              => FND_PROFILE.VALUE('PER_BUSINESS_GROUP_ID'),
                     p_person_id                      => P_person_id,
                     --p_assessment_group_id,
@@ -3620,11 +3636,15 @@ AS
         p_appraiser_person_id          NUMBER DEFAULT NULL,
         p_appraisal_period_start_date  DATE DEFAULT NULL,
         p_appraisal_period_end_date    DATE DEFAULT NULL,
+        p_appraisal_date               DATE DEFAULT NULL,
+        p_next_appraisal_date          DATE DEFAULT NULL,
         p_update_appraisal             VARCHAR2 DEFAULT NULL,
         p_appraisal_system_status      VARCHAR2 DEFAULT NULL,
         p_p_system_type                VARCHAR2 DEFAULT NULL,
         p_system_params                VARCHAR2 DEFAULT NULL,
         p_status                       VARCHAR2 DEFAULT NULL,
+        p_behavioural_competencies     VARCHAR2 DEFAULT NULL,
+        p_technical_competencies       VARCHAR2 DEFAULT NULL,
         p_comments                     VARCHAR2 DEFAULT NULL,
         -------
         p_effective_date               DATE DEFAULT sysdate
@@ -3661,10 +3681,12 @@ AS
             p_effective_date                 => P_EFFECTIVE_DATE,
             p_main_appraiser_id              => p_main_appraiser_id,
             p_appraiser_person_id            => p_appraiser_person_id,      -- Manager
-            p_appraisal_date                 => P_EFFECTIVE_DATE,
+--            p_appraisal_date                 => P_EFFECTIVE_DATE,
             p_update_appraisal               => p_update_appraisal,
             p_appraisal_period_start_date    => P_appraisal_period_start_date,
             p_appraisal_period_end_date      => P_appraisal_period_end_date,
+            p_appraisal_date                 => p_appraisal_date,
+            p_next_appraisal_date            => p_next_appraisal_date,
             p_overall_performance_level_id   => NULL,--6015,
             p_appraisal_system_status        => P_appraisal_system_status,
             p_open                           => '',
@@ -3674,7 +3696,8 @@ AS
             p_system_params                  => P_system_params,
             --changes based on the setup
             --p_attribute1                   => x,
-            --p_attribute2                   => y,
+            p_attribute2                   => p_behavioural_competencies,
+            p_attribute5                   => p_technical_competencies,
             -- OUT
             p_object_version_number          => l_object_version_number);
             ---
@@ -3880,6 +3903,97 @@ AS
                     APEX_JSON.write('PERFORMANCE_RATING_ID', p_performance_rating_id);
                 else
                     APEX_JSON.write('PERFORMANCE_RATING_ID', 'null');
+                end if;
+                APEX_JSON.open_array('MESSAGES');
+                APEX_JSON.open_object;
+                    APEX_JSON.write('TYPE', l_resp_status);
+                    APEX_JSON.write('CODE', 'NULL');
+                    APEX_JSON.write('MSG_TXT', v_error_msg);
+                APEX_JSON.close_object;
+                APEX_JSON.close_array;
+                ---------------------
+                APEX_JSON.close_object;
+                L_RET_CLOB := APEX_JSON.get_clob_output;
+                APEX_JSON.free_output;
+                --
+                L_RET_CLOB := replace(L_RET_CLOB, '"null"', 'null');
+                ---------------------------------------------
+                RETURN L_RET_CLOB;
+    end;
+  
+  FUNCTION update_competence (
+        p_person_id     NUMBER DEFAULT NULL,
+        p_validate      VARCHAR2 DEFAULT NULL,
+        p_competence_element_id  NUMBER DEFAULT NULL,
+        p_rating_level_id NUMBER DEFAULT NULL,
+        p_effective_date DATE DEFAULT SYSDATE
+    ) return clob
+    is
+        ---
+        cursor cur_pefr_obj_v_n is
+            SELECT object_version_number
+               FROM per_competence_elements
+              WHERE COMPETENCE_ELEMENT_ID = p_competence_element_id
+            ;
+        ---
+        --l_performance_rating_id number;
+        L_OBJECT_VERSION_NUMBER number;
+        L_VALIDATE BOOLEAN;
+        --------------
+        v_error_msg               VARCHAR2 (3000);
+        l_resp_status varchar2(20);
+        -----
+        L_RET_CLOB                CLOB;
+    begin
+            init_session(P_PERSON_ID);
+            ---
+            APEX_JSON.initialize_clob_output;
+            APEX_JSON.open_object;
+            ---
+            IF P_VALIDATE = 'TRUE' THEN L_VALIDATE := TRUE; ELSE L_VALIDATE := FALSE; END IF;
+            ---
+            open cur_pefr_obj_v_n;
+            fetch cur_pefr_obj_v_n into l_object_version_number;
+            close cur_pefr_obj_v_n;
+            ---
+            hr_competence_element_api.update_competence_element (
+                    -- IN
+                    p_competence_element_id   => p_competence_element_id,
+                    p_rating_level_id         => p_rating_level_id,
+--                    p_weighting_level_id      => null,
+                    p_effective_date          => p_effective_date,
+                    p_validate                => L_VALIDATE,
+                    -- OUT
+                    p_object_version_number   => l_object_version_number);
+            ---
+            commit;
+            ---
+            l_resp_status := 'success';
+            APEX_JSON.write('STATUS', l_resp_status);
+            APEX_JSON.write('COMPETENCE_ELEMENT_ID', p_competence_element_id);
+            APEX_JSON.open_array('MESSAGES');
+            APEX_JSON.close_array;
+            ---------------------
+            APEX_JSON.close_object;
+            L_RET_CLOB := APEX_JSON.get_clob_output;
+            APEX_JSON.free_output;
+            ---------------------------------------------
+            RETURN L_RET_CLOB;
+            
+            EXCEPTION
+                WHEN OTHERS THEN
+                v_error_msg   := sqlerrm;
+                IF p_competence_element_id IS NOT NULL THEN
+                    l_resp_status := 'warning';
+                ELSE
+                    l_resp_status := 'error';
+                END IF;
+                ---------------------
+                APEX_JSON.write('STATUS', l_resp_status);
+                if p_competence_element_id is not null then
+                    APEX_JSON.write('COMPETENCE_ELEMENT_ID', p_competence_element_id);
+                else
+                    APEX_JSON.write('COMPETENCE_ELEMENT_ID', 'null');
                 end if;
                 APEX_JSON.open_array('MESSAGES');
                 APEX_JSON.open_object;
@@ -4935,7 +5049,7 @@ AS
         WHERE address_id = p_address_id;
         hr_person_address_api.update_person_address(p_validate => L_VALIDATE, p_effective_date => p_effective_date,
                                                p_validate_county => p_validate_county,
-                                               p_primary_flag => p_primary_flag,
+--                                               p_primary_flag => p_primary_flag,
                                                p_date_from => p_date_from,
                                                p_date_to => p_date_to,
                                                p_address_type => p_address_type,
@@ -5476,13 +5590,14 @@ AS
                                       P_ORIG_HIRE_WARNING           => L_ORIG_HIRE_WARNING);
                 ELSE
                     l_contact_type := p_contact_type;
-                    hr_contact_rel_api.update_contact_relationship(p_validate => L_VALIDATE,
-                                                      p_effective_date => SYSDATE,
+                    hr_contact_rel_api.update_contact_relationship(p_validate   => L_VALIDATE,
+                                                      p_effective_date           => SYSDATE,
+                                                      P_DATE_START              => p_start_date,
                                                       p_contact_relationship_id => p_contact_relationship_id,
-                                                      p_contact_type => l_contact_type,
-                                                      p_primary_contact_flag => p_primary_contact_flag,
-                                                      P_PERSONAL_FLAG => P_PERSONAL_FLAG,
-                                                      p_object_version_number => l_contact_rel_ovn);
+                                                      p_contact_type            => l_contact_type,
+                                                      p_primary_contact_flag    => p_primary_contact_flag,
+                                                      P_PERSONAL_FLAG           => P_PERSONAL_FLAG,
+                                                      p_object_version_number   => l_contact_rel_ovn);
                 END IF;
                
             END IF;
