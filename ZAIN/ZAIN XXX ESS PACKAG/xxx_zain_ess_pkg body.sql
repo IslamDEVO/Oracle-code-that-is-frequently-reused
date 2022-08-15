@@ -1037,12 +1037,15 @@ AS
         for ent_q in cur_ent_queries loop
             ------ Select Query Manipulation ------
             v_query_string := ent_q.entity_query;
-            if P_PERSON_ID is not null then
+            if P_PERSON_ID is not null and P_REQUESTER_PERSON_ID is null then
                 v_query_string := replace(v_query_string, '#PERSON_ID#', P_PERSON_ID);
                 v_query_string := replace(v_query_string, '#REQUESTER_ID#', 'NULL');
-            else
+            elsif P_REQUESTER_PERSON_ID is not null and P_PERSON_ID is null then
                 v_query_string := replace(v_query_string, '#PERSON_ID#', 'NULL');
                 v_query_string := replace(v_query_string, '#REQUESTER_ID#', P_REQUESTER_PERSON_ID);
+            else
+                v_query_string := replace(v_query_string, '#PERSON_ID#', 'NULL');
+                v_query_string := replace(v_query_string, '#REQUESTER_ID#', 'NULL');
             end if;
             if P_LIMIT is not null then
                 v_query_string := replace(v_query_string, '#LIMIT#', P_LIMIT);
@@ -5528,37 +5531,9 @@ AS
         l_dt_ud_mode := dt_ud_mode(p_effective_date => l_ESD, p_base_table_name => 'PER_ALL_PEOPLE_F',
                                   p_base_key_column => 'PERSON_ID',
                                   p_base_key_value => p_contact_person_id);
-            
-                hr_sa_person_api.update_sa_person(
-                                     p_validate => L_VALIDATE, 
-                                     p_effective_date => l_ESD,
-                                     p_datetrack_update_mode => l_dt_ud_mode,
-                                     p_person_id => p_contact_person_id,
-                                     p_object_version_number => l_OVN,
-                                     p_family_name => p_family_name,
-                                     p_date_of_birth => p_date_of_birth,
-                                     p_hijrah_birth_date => NULL,
-                                     p_email_address => p_email_address,
-                                     p_employee_number => l_employee_number,
-                                     p_first_name => p_first_name,
-                                     p_national_identifier => p_national_identifier,
-                                     p_sex => p_sex,
-                                     p_title => p_title,
-                                     p_father_name => p_father_name,
-                                     p_grandfather_name => p_grandfather_name,
-                                     p_alt_first_name => p_alt_first_name,
-                                     p_alt_father_name => p_alt_father_name,
-                                     p_alt_grandfather_name => p_alt_grandfather_name,
-                                     p_alt_family_name => p_alt_family_name,
-                                     p_effective_start_date => l_effective_start_date,
-                                     p_effective_end_date => l_effective_end_date,
-                                     p_full_name => l_full_name,
-                                     p_comment_id => l_comment_id,
-                                     p_name_combination_warning => l_name_combination_warning,
-                                     p_assign_payroll_warning => l_assign_payroll_warning,
-                                     p_orig_hire_warning => l_orig_hire_warning);
-            
-            IF l_OVN IS NOT NULL THEN
+                                  
+            /*Update Contact relationship*/
+--            IF l_OVN IS NOT NULL THEN
                 SELECT object_version_number
                 INTO l_contact_rel_ovn
                 FROM per_contact_relationships
@@ -5592,8 +5567,9 @@ AS
                     IF p_contact_relationship_id != 0 THEN
                         l_contact_type := p_contact_type;
                         hr_contact_rel_api.update_contact_relationship(p_validate   => L_VALIDATE,
-                                                          p_effective_date           => SYSDATE,
+                                                          p_effective_date           => p_start_date,
                                                           P_DATE_START              => p_start_date,
+                                                          p_DATE_END                => NULL,
                                                           p_contact_relationship_id => p_contact_relationship_id,
                                                           p_contact_type            => l_contact_type,
                                                           p_primary_contact_flag    => p_primary_contact_flag,
@@ -5626,7 +5602,37 @@ AS
                     END IF;
                 END IF;
                
-            END IF;
+--            END IF;
+            
+                hr_sa_person_api.update_sa_person(
+                                     p_validate => L_VALIDATE, 
+                                     p_effective_date => l_ESD,
+                                     p_datetrack_update_mode => l_dt_ud_mode,
+                                     p_person_id => p_contact_person_id,
+                                     p_object_version_number => l_OVN,
+                                     p_family_name => p_family_name,
+                                     p_date_of_birth => p_date_of_birth,
+                                     p_hijrah_birth_date => NULL,
+                                     p_email_address => p_email_address,
+                                     p_employee_number => l_employee_number,
+                                     p_first_name => p_first_name,
+                                     p_national_identifier => p_national_identifier,
+                                     p_sex => p_sex,
+                                     p_title => p_title,
+                                     p_father_name => p_father_name,
+                                     p_grandfather_name => p_grandfather_name,
+                                     p_alt_first_name => p_alt_first_name,
+                                     p_alt_father_name => p_alt_father_name,
+                                     p_alt_grandfather_name => p_alt_grandfather_name,
+                                     p_alt_family_name => p_alt_family_name,
+                                     p_effective_start_date => l_effective_start_date,
+                                     p_effective_end_date => l_effective_end_date,
+                                     p_full_name => l_full_name,
+                                     p_comment_id => l_comment_id,
+                                     p_name_combination_warning => l_name_combination_warning,
+                                     p_assign_payroll_warning => l_assign_payroll_warning,
+                                     p_orig_hire_warning => l_orig_hire_warning);
+            
             /* update address if exist*/
             IF l_contact_rel_ovn IS NOT NULL THEN
                     IF p_use_primary_address = 'N' THEN
