@@ -2484,6 +2484,7 @@ AS
         p_qualification_type_id         NUMBER DEFAULT null,
         p_title                         VARCHAR2 DEFAULT null,
         p_attendance_id                 NUMBER DEFAULT null,
+        P_ESTABLISHMENT_ID              NUMBER DEFAULT null,
         p_start_date                    VARCHAR2 DEFAULT null,
         p_end_date                      VARCHAR2 DEFAULT null,
         p_comments                      VARCHAR2 DEFAULT null,
@@ -2494,6 +2495,14 @@ AS
        L_VALIDATE BOOLEAN;
        l_qualification_id              NUMBER;
        l_object_version_number         NUMBER;
+       ---------
+       cursor cur_attn_est is
+            select * from PER_ESTABLISHMENT_ATTENDANCES 
+            where ESTABLISHMENT_ID=P_ESTABLISHMENT_ID
+            and person_id=P_PERSON_ID
+            ;
+        ------
+        rec_attn_est cur_attn_est%rowtype;
         --------------
         v_error_msg               VARCHAR2 (3000);
         l_resp_status varchar2(20);
@@ -2505,7 +2514,70 @@ AS
             APEX_JSON.initialize_clob_output;
             APEX_JSON.open_object;
             ---
+            open cur_attn_est;
+            fetch cur_attn_est into rec_attn_est;
+            close cur_attn_est;
+            ---
             IF P_VALIDATE = 'TRUE' THEN L_VALIDATE := TRUE; ELSE L_VALIDATE := FALSE; END IF;
+            ---
+            if rec_attn_est.attendance_id is null then
+--                l_resp_status := 'error';
+--                APEX_JSON.write('STATUS', l_resp_status);
+--                if l_qualification_id is not null then
+--                    APEX_JSON.write('QUALIFICATION_ID', l_qualification_id);
+--                else
+--                    APEX_JSON.write('QUALIFICATION_ID', 'null');
+--                end if;
+--                APEX_JSON.open_array('MESSAGES');
+--                APEX_JSON.open_object;
+--                    APEX_JSON.write('TYPE', l_resp_status);
+--                    APEX_JSON.write('CODE', 'NULL');
+--                    APEX_JSON.write('MSG_TXT', 'Please create establishment attendance first.');
+--                APEX_JSON.close_object;
+--                APEX_JSON.close_array;
+--                ---------------------
+--                APEX_JSON.close_object;
+--                L_RET_CLOB := APEX_JSON.get_clob_output;
+--                APEX_JSON.free_output;
+--                --
+--                L_RET_CLOB := replace(L_RET_CLOB, '"null"', 'null');
+--                ---------------------------------------------
+--                RETURN L_RET_CLOB;
+                ----------------------
+                per_estab_attendances_api.CREATE_ATTENDED_ESTAB (
+                        p_validate              => L_VALIDATE,
+                        p_person_id             => p_person_id,
+                        ---
+                        p_business_group_id     => fnd_profile.VALUE ('PER_BUSINESS_GROUP_ID'),
+                        p_attendance_id         => rec_attn_est.attendance_id,
+                        p_establishment_id      => p_establishment_id,
+--                        p_establishment         => :establishment,
+                        p_address               => null,
+                        p_fulltime              => 'N',
+                        p_attended_start_date   => p_start_date,
+                        p_attended_end_date     => p_end_date,
+                        p_object_version_number => rec_attn_est.object_version_number,
+                        -------
+                        p_effective_date        => p_effective_date
+                );
+                ----
+                commit;
+            else
+                per_estab_attendances_api.UPDATE_ATTENDED_ESTAB (
+                      p_validate                => L_VALIDATE,
+                      p_effective_date          => p_effective_date,
+                      p_establishment_id        => p_establishment_id,
+--                      p_establishment           => p_establishment,
+    --                  p_person_id               => p_person_id,
+                      p_fulltime                => 'N',
+                      p_address                 => null,
+                      p_attended_start_date     => p_start_date,
+                      p_attended_end_date       => p_end_date,
+                      p_attendance_id           => rec_attn_est.attendance_id,
+                      p_object_version_number   => rec_attn_est.object_version_number);
+                ---
+                commit;
+            end if;
             ---
             PER_QUALIFICATIONS_API.CREATE_QUALIFICATION (
                   p_validate                => L_VALIDATE,
@@ -2514,7 +2586,7 @@ AS
                   p_business_group_id       => fnd_profile.VALUE ('PER_BUSINESS_GROUP_ID'),
                   p_person_id               => p_person_id,
                   p_title                   => p_title,
-                  p_attendance_id           => p_attendance_id,
+                  p_attendance_id           => rec_attn_est.attendance_id, -- p_attendance_id,
                   p_start_date              => p_start_date,
                   p_end_date                => p_end_date,
                   p_qualification_id        => l_qualification_id,
@@ -2575,6 +2647,7 @@ AS
         p_qualification_type_id         NUMBER DEFAULT null,
         p_title                         VARCHAR2 DEFAULT null,
         p_attendance_id                 NUMBER DEFAULT null,
+        P_ESTABLISHMENT_ID              NUMBER DEFAULT null,
         p_start_date                    VARCHAR2 DEFAULT null,
         p_end_date                      VARCHAR2 DEFAULT null,
         p_comments                      VARCHAR2 DEFAULT null,
@@ -2585,12 +2658,21 @@ AS
        L_VALIDATE BOOLEAN;
        l_qualification_id              NUMBER;
        l_object_version_number         NUMBER;
+       ---------
+       cursor cur_attn_est is
+            select * from PER_ESTABLISHMENT_ATTENDANCES 
+            where ESTABLISHMENT_ID=P_ESTABLISHMENT_ID
+            and person_id=P_PERSON_ID
+            ;
+        ------
+        rec_attn_est cur_attn_est%rowtype;
         --------------
         cursor cur_qualification_ovn is
             SELECT object_version_number
                FROM PER_QUALIFICATIONS
                WHERE QUALIFICATION_ID=P_QUALIFICATION_ID
                ;
+--       l_attn_est_ovn         NUMBER;
         --------------
         v_error_msg               VARCHAR2 (3000);
         l_resp_status varchar2(20);
@@ -2602,7 +2684,70 @@ AS
             APEX_JSON.initialize_clob_output;
             APEX_JSON.open_object;
             ---
+            open cur_attn_est;
+            fetch cur_attn_est into rec_attn_est;
+            close cur_attn_est;
+            ---
             IF P_VALIDATE = 'TRUE' THEN L_VALIDATE := TRUE; ELSE L_VALIDATE := FALSE; END IF;
+            ---
+            if rec_attn_est.attendance_id is null then
+--                l_resp_status := 'error';
+--                APEX_JSON.write('STATUS', l_resp_status);
+--                if l_qualification_id is not null then
+--                    APEX_JSON.write('QUALIFICATION_ID', l_qualification_id);
+--                else
+--                    APEX_JSON.write('QUALIFICATION_ID', 'null');
+--                end if;
+--                APEX_JSON.open_array('MESSAGES');
+--                APEX_JSON.open_object;
+--                    APEX_JSON.write('TYPE', l_resp_status);
+--                    APEX_JSON.write('CODE', 'NULL');
+--                    APEX_JSON.write('MSG_TXT', 'Please create establishment attendance first.');
+--                APEX_JSON.close_object;
+--                APEX_JSON.close_array;
+--                ---------------------
+--                APEX_JSON.close_object;
+--                L_RET_CLOB := APEX_JSON.get_clob_output;
+--                APEX_JSON.free_output;
+--                --
+--                L_RET_CLOB := replace(L_RET_CLOB, '"null"', 'null');
+--                ---------------------------------------------
+--                RETURN L_RET_CLOB;
+                ----------------------
+                per_estab_attendances_api.CREATE_ATTENDED_ESTAB (
+                        p_validate              => L_VALIDATE,
+                        p_person_id             => p_person_id,
+                        ---
+                        p_business_group_id     => fnd_profile.VALUE ('PER_BUSINESS_GROUP_ID'),
+                        p_attendance_id         => rec_attn_est.attendance_id,
+                        p_establishment_id      => p_establishment_id,
+--                        p_establishment         => :establishment,
+                        p_address               => null,
+                        p_fulltime              => 'N',
+                        p_attended_start_date   => p_start_date,
+                        p_attended_end_date     => p_end_date,
+                        p_object_version_number => rec_attn_est.object_version_number, --l_attn_est_ovn,
+                        -------
+                        p_effective_date        => p_effective_date
+                );
+                ----
+                commit;
+            else
+                per_estab_attendances_api.UPDATE_ATTENDED_ESTAB (
+                      p_validate                => L_VALIDATE,
+                      p_effective_date          => p_effective_date,
+                      p_establishment_id        => p_establishment_id,
+--                      p_establishment           => p_establishment,
+    --                  p_person_id               => p_person_id,
+                      p_fulltime                => 'N',
+                      p_address                 => null,
+                      p_attended_start_date     => p_start_date,
+                      p_attended_end_date       => p_end_date,
+                      p_attendance_id           => rec_attn_est.attendance_id,
+                      p_object_version_number   => rec_attn_est.object_version_number);
+                ---
+                commit;
+            end if;
             ---
             open cur_qualification_ovn;
             fetch cur_qualification_ovn into l_object_version_number;
@@ -2615,7 +2760,7 @@ AS
 --                  p_business_group_id       => fnd_profile.VALUE ('PER_BUSINESS_GROUP_ID'),
 --                  p_person_id               => p_person_id,
                   p_title                   => p_title,
-                  p_attendance_id           => p_attendance_id,
+                  p_attendance_id           => rec_attn_est.attendance_id, -- p_attendance_id,
                   p_start_date              => p_start_date,
                   p_end_date                => p_end_date,
                   p_qualification_id        => P_QUALIFICATION_ID,
@@ -3299,6 +3444,7 @@ AS
              P_GROUP_CODE                    => P_GROUP_CODE,
              P_PRIORITY_CODE                 => P_PRIORITY_CODE,
              P_APPRAISE_FLAG                 => P_APPRAISE_FLAG,
+             P_APPRAISAL_ID                  => P_APPRAISAL_ID,
              P_TARGET_VALUE                  => P_TARGET_VALUE,
              P_ACTUAL_VALUE                  => P_ACTUAL_VALUE,
              P_UOM_CODE                      => P_UOM_CODE,
@@ -3649,6 +3795,7 @@ AS
         p_behavioural_competencies     VARCHAR2 DEFAULT NULL,
         p_technical_competencies       VARCHAR2 DEFAULT NULL,
         p_comments                     VARCHAR2 DEFAULT NULL,
+        p_appraisee_comments           VARCHAR2 DEFAULT NULL,
         -------
         p_effective_date               DATE DEFAULT sysdate
     ) RETURN CLOB
@@ -3694,6 +3841,7 @@ AS
             p_appraisal_system_status        => P_appraisal_system_status,
             p_open                           => '',
             p_status                         => p_status,
+            p_appraisee_comments             => p_appraisee_comments,
             p_comments                       => p_comments,
             p_system_type                    => P_p_system_type,
             p_system_params                  => P_system_params,
