@@ -37,7 +37,7 @@ SELECT
             AND lookup_code = pcr.contact_type
     )                              relationship,
     pcr.contact_type        contact_type_code,
-    papf2.start_date,
+    pcr.date_start		START_DATE,
     (
         SELECT
             meaning
@@ -225,7 +225,7 @@ SELECT
             CASE
                 WHEN 1 = 1
                     AND pa1.style = NVL(pa2.style, pa1.style)
-                    AND pa1.address_type = NVL(pa2.address_type, pa1.address_type)
+                    AND NVL(pa1.address_type, '1') = NVL(pa2.address_type, NVL(pa1.address_type, '1'))
                     AND pa1.region_1 = NVL(pa2.region_1, pa1.region_1)
                     AND pa1.region_2 = NVL(pa2.region_2, pa1.region_2)
                     AND pa1.region_3 = NVL(pa2.region_3, pa1.region_3)
@@ -261,7 +261,8 @@ WHERE
     AND pcr.contact_person_id NOT IN (
         SELECT contact_person_id
         FROM per_contact_relationships
-        WHERE contact_type = 'EMRG' AND person_id = 124101 --#PER_PERSON_ID#
+        WHERE contact_type = 'EMRG' AND person_id = 56193 --#PER_PERSON_ID#
+        AND sysdate BETWEEN date_start AND NVL(date_end, '01-JAN-47')
     )
     AND pcr.contact_person_id = papf2.person_id
     AND pd.person_id (+) = pcr.contact_person_id
@@ -270,5 +271,4 @@ WHERE
     AND sysdate BETWEEN papf2.effective_start_date AND papf2.effective_end_date
     AND sysdate BETWEEN papf.effective_start_date AND papf.effective_end_date
     AND sysdate BETWEEN pcr.date_start AND NVL(pcr.date_end, '01-JAN-47')
-    AND papf.person_id = 124101 --56193 --#PER_PERSON_ID#
---    AND ROWNUM < 5
+    AND papf.person_id = 56193 --#PER_PERSON_ID#
