@@ -5642,6 +5642,7 @@ AS
         l_contact_relationship_id   NUMBER;
         l_contact_person_id         NUMBER;
         l_contact_person_ovn        NUMBER;
+        l_emrg_rel_id               NUMBER;
         --------------
         l_address_id                NUMBER DEFAULT NULL;
         l_address_start_date        DATE;
@@ -5688,30 +5689,62 @@ AS
                 WHERE CONTACT_RELATIONSHIP_ID = p_contact_relationship_id;
                 ---
                 IF p_addEmergency_flag = 'Y' THEN
+                    SELECT COALESCE(SUM(contact_relationship_id), 0)
+                    INTO l_emrg_rel_id
+                    FROM per_contact_relationships
+                    WHERE person_id =  P_PERSON_ID
+                        AND contact_person_id = p_contact_person_id
+                        And contact_type = 'EMRG';
+                    
                     l_contact_type := 'EMRG';
-                    HR_CONTACT_REL_API.CREATE_CONTACT (
-                                      -- IN
-                                      P_VALIDATE                    => L_VALIDATE,
-                                      P_DATE_START                  => p_start_date,
-                                      P_START_DATE                  => p_start_date,
-                                      P_BUSINESS_GROUP_ID           => FND_PROFILE.VALUE('PER_BUSINESS_GROUP_ID'),
-                                      P_PERSON_ID                   => P_PERSON_ID, 
-                                      P_CONTACT_PERSON_ID           => p_contact_person_id, --
-                                      P_CONTACT_TYPE                => l_contact_type, --'F', --'BROTHER',
-                                      P_PRIMARY_CONTACT_FLAG        => P_PRIMARY_CONTACT_FLAG, --'N',
-                                      P_PERSONAL_FLAG               => P_PERSONAL_FLAG, --'N',
-                                      -- OUT
-                                      P_CONTACT_RELATIONSHIP_ID     => l_contact_relationship_id,
-                                      P_CTR_OBJECT_VERSION_NUMBER   => l_contact_rel_ovn,
-                                      P_PER_PERSON_ID               => l_contact_person_id,
-                                      P_PER_OBJECT_VERSION_NUMBER   => l_contact_person_ovn,
-                                      P_PER_EFFECTIVE_START_DATE    => l_per_start_date,
-                                      P_PER_EFFECTIVE_END_DATE      => l_per_end_date,
-                                      P_FULL_NAME                   => l_contact_full_name,
-                                      P_PER_COMMENT_ID              => l_per_comment_id,
-                                      P_NAME_COMBINATION_WARNING    => l_name_comb_warning,
-                                      P_ORIG_HIRE_WARNING           => L_ORIG_HIRE_WARNING);
-                ELSE
+                    IF l_emrg_rel_id = 0 THEN
+                        HR_CONTACT_REL_API.CREATE_CONTACT (
+                                          -- IN
+                                          P_VALIDATE                    => L_VALIDATE,
+                                          P_DATE_START                  => p_start_date,
+                                          P_START_DATE                  => p_start_date,
+                                          P_BUSINESS_GROUP_ID           => FND_PROFILE.VALUE('PER_BUSINESS_GROUP_ID'),
+                                          P_PERSON_ID                   => P_PERSON_ID, 
+                                          P_CONTACT_PERSON_ID           => p_contact_person_id, --
+                                          P_CONTACT_TYPE                => l_contact_type, --'F', --'BROTHER',
+                                          P_PRIMARY_CONTACT_FLAG        => P_PRIMARY_CONTACT_FLAG, --'N',
+                                          P_PERSONAL_FLAG               => P_PERSONAL_FLAG, --'N',
+                                          -- OUT
+                                          P_CONTACT_RELATIONSHIP_ID     => l_contact_relationship_id,
+                                          P_CTR_OBJECT_VERSION_NUMBER   => l_contact_rel_ovn,
+                                          P_PER_PERSON_ID               => l_contact_person_id,
+                                          P_PER_OBJECT_VERSION_NUMBER   => l_contact_person_ovn,
+                                          P_PER_EFFECTIVE_START_DATE    => l_per_start_date,
+                                          P_PER_EFFECTIVE_END_DATE      => l_per_end_date,
+                                          P_FULL_NAME                   => l_contact_full_name,
+                                          P_PER_COMMENT_ID              => l_per_comment_id,
+                                          P_NAME_COMBINATION_WARNING    => l_name_comb_warning,
+                                          P_ORIG_HIRE_WARNING           => L_ORIG_HIRE_WARNING);
+                    ELSE
+                        SELECT object_version_number
+                        INTO l_contact_rel_ovn
+                        FROM per_contact_relationships
+                        WHERE person_id =  P_PERSON_ID
+                            AND contact_person_id = p_contact_person_id
+                            And contact_type = 'EMRG';
+                        hr_contact_rel_api.update_contact_relationship(p_validate   => L_VALIDATE,
+                                                          p_effective_date           => p_start_date,
+                                                          P_DATE_START              => p_start_date,
+                                                          p_DATE_END                => NULL,
+                                                          p_contact_relationship_id => l_emrg_rel_id,
+                                                          p_contact_type            => l_contact_type,
+--                                                          p_primary_contact_flag    => p_primary_contact_flag,
+--                                                          P_PERSONAL_FLAG           => P_PERSONAL_FLAG,
+                                                          p_object_version_number   => l_contact_rel_ovn);
+                    END IF;
+                
+                END IF;
+--                ELSE
+                    SELECT object_version_number
+                    INTO l_contact_rel_ovn
+                    FROM per_contact_relationships
+                    WHERE contact_relationship_id = p_contact_relationship_id;
+                    
                     IF p_contact_relationship_id != 0 THEN
                         l_contact_type := p_contact_type;
                         hr_contact_rel_api.update_contact_relationship(p_validate   => L_VALIDATE,
@@ -5748,7 +5781,7 @@ AS
                                       P_NAME_COMBINATION_WARNING    => l_name_comb_warning,
                                       P_ORIG_HIRE_WARNING           => L_ORIG_HIRE_WARNING);
                     END IF;
-                END IF;
+--                END IF;
                
 --            END IF;
             
